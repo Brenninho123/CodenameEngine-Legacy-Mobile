@@ -13,14 +13,14 @@ import flixel.graphics.frames.FlxAtlasFrames;
 import flixel.system.FlxAssets.FlxGraphicAsset;
 import flixel.graphics.FlxGraphic;
 
+#if android
+import mobile.backend.StorageSystem;
+#end
+
 using StringTools;
 
 class Paths
 {
-	/**
-	 * Preferred sound extension for the game's audio files.
-	 * Currently is set to `mp3` for web targets, and `ogg` for other targets.
-	 */
 	inline public static final SOUND_EXT = #if web "mp3" #else "ogg" #end;
 
 	public static var assetsTree:AssetsLibraryList;
@@ -28,6 +28,11 @@ class Paths
 	public static var tempFramesCache:Map<String, FlxFramesCollection> = [];
 
 	public static function init() {
+		#if android
+		StorageSystem.createFolderIfNotExists(StorageSystem.storagePath + "mods/");
+		StorageSystem.createFolderIfNotExists(StorageSystem.storagePath + "addons/");
+		#end
+
 		FlxG.signals.preStateSwitch.add(function() {
 			tempFramesCache.clear();
 		});
@@ -129,10 +134,6 @@ class Paths
 		return getPath('data/characters/$character.xml', null);
 	}
 
-	/**
-	 * Gets the name of a registered font.
-	 * @param font The font's path (if it's already passed as a font name, the same name will be returned)
-	 */
 	inline static public function getFontName(font:String)
 	{
 		return OpenFlAssets.exists(font, FONT) ? OpenFlAssets.getFont(font).fontName : font;
@@ -181,14 +182,16 @@ class Paths
 	inline static public function getAsepriteAtlasAlt(key:String)
 		return FlxAtlasFrames.fromAseprite('$key.png', '$key.json');
 
-	inline static public function getAssetsRoot():String
-		return  ModsFolder.currentModFolder != null ? '${ModsFolder.modsPath}${ModsFolder.currentModFolder}' : #if (sys && TEST_BUILD) './${Main.pathBack}assets/' #else './assets' #end;
+	inline static public function getAssetsRoot():String {
+		if (ModsFolder.currentModFolder != null)
+			return '${ModsFolder.modsPath}${ModsFolder.currentModFolder}';
+		#if (sys && TEST_BUILD)
+		return './${Main.pathBack}assets/';
+		#else
+		return './assets';
+		#end
+	}
 
-	/**
-	 * Gets frames at specified path.
-	 * @param key Path to the frames
-	 * @param library (Additional) library to load the frames from.
-	 */
 	public static function getFrames(key:String, assetsPath:Bool = false, ?library:String) {
 		if (tempFramesCache.exists(key)) {
 			var frames = tempFramesCache[key];
@@ -200,14 +203,6 @@ class Paths
 		return tempFramesCache[key] = loadFrames(assetsPath ? key : Paths.image(key, library, true));
 	}
 
-	/**
-	 * Checks if the images needed for using getFrames() exist.
-	 * @param key Path to the image
-	 * @param checkAtlas Whenever to check for the Animation.json file (used in FlxAnimate)
-	 * @param assetsPath Whenever to use the raw path or to pass it through Paths.image()
-	 * @param library (Additional) library to load the frames from.
-	 * @return True if the images exist, false otherwise.
-	**/
 	public static function framesExists(key:String, checkAtlas:Bool = false, checkMulti:Bool = true, assetsPath:Bool = false, ?library:String) {
 		var path = assetsPath ? key : Paths.image(key, library, true);
 		var noExt = Path.withoutExtension(path);
@@ -224,26 +219,15 @@ class Paths
 		return false;
 	}
 
-	/**
-	 * Loads frames from a specific image path. Supports Sparrow Atlases, Packer Atlases, and multiple spritesheets.
-	 * @param path Path to the image
-	 * @param Unique Whenever the image should be unique in the cache
-	 * @param Key Key to the image in the cache
-	 * @param SkipAtlasCheck Whenever the atlas check should be skipped.
-	 * @return FlxFramesCollection Frames
-	 */
 	static function loadFrames(path:String, Unique:Bool = false, Key:String = null, SkipAtlasCheck:Bool = false, SkipMultiCheck:Bool = false):FlxFramesCollection {
 		var noExt = Path.withoutExtension(path);
 
 		if (!SkipMultiCheck && Assets.exists('$noExt/1.png')) {
-			// MULTIPLE SPRITESHEETS!!
-
 			var graphic = FlxG.bitmap.add("flixel/images/logo/default.png", false, '$noExt/mult');
 			var frames = MultiFramesCollection.findFrame(graphic);
 			if (frames != null)
 				return frames;
 
-			trace("no frames yet for multiple atlases!!");
 			var cur = 1;
 			var finalFrames = new MultiFramesCollection(graphic);
 			while(Assets.exists('$noExt/$cur.png')) {
@@ -265,6 +249,7 @@ class Paths
 			return null;
 		return graph.imageFrame;
 	}
+
 	static public function getFolderDirectories(key:String, addPath:Bool = false, source:AssetsLibraryList.AssetSource = BOTH):Array<String> {
 		if (!key.endsWith("/")) key += "/";
 		var content = assetsTree.getFolders('assets/$key', source);
@@ -274,8 +259,8 @@ class Paths
 		}
 		return content;
 	}
+
 	static public function getFolderContent(key:String, addPath:Bool = false, source:AssetsLibraryList.AssetSource = BOTH):Array<String> {
-		// designed to work both on windows and web
 		if (!key.endsWith("/")) key += "/";
 		var content = assetsTree.getFiles('assets/$key', source);
 		if (addPath) {
@@ -283,61 +268,8 @@ class Paths
 				content[k] = '$key$e';
 		}
 		return content;
-		/*
-		if (!key.endsWith("/")) key = key + "/";
-
-		if (ModsFolder.currentModFolder == null && !scanSource)
-			return getFolderContent(key, false, addPath, true);
-
-		var folderPath:String = scanSource ? getAssetsPath(key) : getLibraryPathForce(key, 'mods/${ModsFolder.currentModFolder}');
-		var libThing = new LimeLibrarySymbol(folderPath);
-		var library = libThing.library;
-
-		if (library is openfl.utils.AssetLibrary) {
-			var lib = cast(libThing.library, openfl.utils.AssetLibrary);
-			@:privateAccess
-			if (lib.__proxy != null) library = lib.__proxy;
-		}
-
-		var content:Array<String> = [];
-		#if MOD_SUPPORT
-		if (library is funkin.backend.assets.IModsAssetLibrary) {
-			// easy task, can immediately scan for files!
-			var lib = cast(library, funkin.backend.assets.IModsAssetLibrary);
-			content = lib.getFiles(libThing.symbolName);
-			if (addPath)
-				for(i in 0...content.length)
-					content[i] = '$folderPath${content[i]}';
-		} else #end {
-			@:privateAccess
-			for(k=>e in library.paths) {
-				if (k.toLowerCase().startsWith(libThing.symbolName.toLowerCase())) {
-					if (addPath) {
-						if (libThing.libraryName != "")
-							content.push('${libThing.libraryName}:$k');
-						else
-							content.push(k);
-					} else {
-						var barebonesFileName = k.substr(libThing.symbolName.length);
-						if (!barebonesFileName.contains("/"))
-							content.push(barebonesFileName);
-					}
-				}
-			}
-		}
-
-		if (includeSource) {
-			var sourceResult = getFolderContent(key, false, addPath, true);
-			for(e in sourceResult)
-				if (!content.contains(e))
-					content.push(e);
-		}
-
-		return content;
-		*/
 	}
 
-	// Used in Script.hx
 	@:noCompletion public static function getFilenameFromLibFile(path:String) {
 		var file = new haxe.io.Path(path);
 		if(file.file.startsWith("LIB_")) {
