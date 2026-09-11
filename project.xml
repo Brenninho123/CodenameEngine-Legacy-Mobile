@@ -143,6 +143,10 @@
 	<haxelib name="markdown" />
 	<haxelib name="extension-androidtools" if="android" />
 
+	<config:android permission="android.permission.READ_EXTERNAL_STORAGE" if="android" />
+	<config:android permission="android.permission.WRITE_EXTERNAL_STORAGE" if="android" />
+	<config:android permission="android.permission.MANAGE_EXTERNAL_STORAGE" if="android" />
+
 	<section if="COMPILE_ALL_CLASSES">
 		<haxeflag name="-dce" value="no" />
 		<haxeflag name="--macro" value="funkin.backend.system.macros.Macros.addAdditionalClasses()" />
