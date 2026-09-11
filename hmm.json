@@ -71,6 +71,13 @@
 			"dir": null,
 			"ref": "d9858b6dbd1057445cbcdea4a1ab8c8cb1bea255",
 			"url": "https://github.com/CodenameCrew/away3d"
+		},
+		{
+			"name": "extension-androidtools",
+			"type": "git",
+			"dir": null,
+			"ref": "4ef308412a7ae88a60862d1e97a4aa34765b1dcc",
+			"url": "https://github.com/MAJigsaw77/extension-androidtools"
 		}
 	]
 }
