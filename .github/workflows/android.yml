@@ -6,7 +6,7 @@ jobs:
   build:
     name: Android Build
     permissions: write-all
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Pulling the new commit
         uses: actions/checkout@v2
@@ -21,17 +21,10 @@ jobs:
           java-version: '17'
       - name: Setting up Android SDK
         uses: android-actions/setup-android@v3
-      - name: Locating sdkmanager
-        id: sdkmanager
-        shell: bash
-        run: |
-          SDKMANAGER_PATH=$(find "$ANDROID_SDK_ROOT" -type f \( -name "sdkmanager" -o -name "sdkmanager.bat" \) | head -n 1)
-          echo "path=$SDKMANAGER_PATH" >> "$GITHUB_OUTPUT"
       - name: Accepting Google licenses and installing NDK
-        shell: bash
         run: |
-          yes | "${{ steps.sdkmanager.outputs.path }}" --licenses
-          "${{ steps.sdkmanager.outputs.path }}" --install "ndk;21.4.7075529"
+          yes | sdkmanager --licenses
+          sdkmanager --install "ndk;21.4.7075529"
           echo "ANDROID_SDK=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/21.4.7075529" >> $GITHUB_ENV
       - name: Restore existing build cache for faster compilation
