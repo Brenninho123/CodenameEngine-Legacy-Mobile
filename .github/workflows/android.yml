@@ -21,6 +21,15 @@ jobs:
           java-version: '17'
       - name: Setting up Android SDK
         uses: android-actions/setup-android@v3
+      - name: Accepting Android SDK licenses
+        shell: bash
+        run: yes | sdkmanager --licenses || true
+      - name: Installing Android NDK
+        shell: bash
+        run: |
+          sdkmanager --install "ndk;21.4.7075529"
+          echo "ANDROID_SDK=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/21.4.7075529" >> $GITHUB_ENV
       - name: Restore existing build cache for faster compilation
         uses: actions/cache@v3
         with:
@@ -39,7 +48,7 @@ jobs:
           haxelib git extension-androidtools https://github.com/MAJigsaw77/extension-androidtools.git
       - name: Setting up Lime for Android
         run: |
-          haxelib run lime setup android
+          haxelib run lime setup android -y
       - name: Building the game
         run: |
           haxelib run lime build android
