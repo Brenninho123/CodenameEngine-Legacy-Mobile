@@ -15,6 +15,7 @@ import flixel.addons.transition.FlxTransitionSprite.GraphicTransTileDiamond;
 import flixel.addons.transition.TransitionData;
 import flixel.math.FlxPoint;
 import flixel.math.FlxRect;
+import flixel.system.scaleModes.BaseScaleMode;
 import funkin.backend.system.modules.*;
 
 #if ALLOW_MULTITHREADING
@@ -28,18 +29,18 @@ import funkin.backend.assets.ModsFolder;
 #if android
 import mobile.backend.StorageSystem;
 #end
+#if mobile
+import mobile.ui.FullScreenScaleMode;
+#end
 
 class Main extends Sprite
 {
-	// make this empty once you guys are done with the project.
-	// good luck /gen <3 @crowplexus
 	public static final releaseCycle:String = "Beta";
-	// add a version number in dis shid rn 
 	public static var releaseVersion(get, default):String = null;
 	public static function get_releaseVersion():String {
 		if (releaseVersion != null)
 			return releaseVersion;
-		
+
 		return lime.app.Application.current.meta.get('version');
 	}
 
@@ -49,25 +50,20 @@ class Main extends Sprite
 	public static var forceGPUOnlyBitmapsOff:Bool = #if windows false #else true #end;
 	public static var noTerminalColor:Bool = false;
 
-	public static var scaleMode:FunkinRatioScaleMode;
+	public static var scaleMode:BaseScaleMode;
 	#if !mobile
 	public static var framerateSprite:funkin.backend.system.framerate.Framerate;
 	#end
 
-	var gameWidth:Int = 1280; // Width of the game in pixels (might be less / more in actual pixels).
-	var gameHeight:Int = 720; // Height of the game in pixels (might be less / more in actual pixels).
-	var skipSplash:Bool = true; // Whether to skip the flixel splash screen that appears in release mode.
-	var startFullscreen:Bool = false; // Whether to start the game in fullscreen on desktop targets
+	var gameWidth:Int = 1280;
+	var gameHeight:Int = 720;
+	var skipSplash:Bool = true;
+	var startFullscreen:Bool = false;
 
 	public static var game:FunkinGame;
 
-	/**
-	 * The time since the game was focused last time in seconds.
-	 */
 	public static var timeSinceFocus(get, never):Float;
 	public static var time:Int = 0;
-
-	// You can pretty much ignore everything from here on - your code should go in your states.
 
 	#if ALLOW_MULTITHREADING
 	public static var gameThreads:Array<Thread> = [];
@@ -145,7 +141,6 @@ class Main extends Sprite
 		#end
 
 		#if (sys && TEST_BUILD)
-			trace("Used cne test / cne build. Switching into source assets.");
 			#if MOD_SUPPORT
 				ModsFolder.modsPath = './${pathBack}mods/';
 				ModsFolder.addonsPath = './${pathBack}addons/';
@@ -167,7 +162,11 @@ class Main extends Sprite
 
 		FlxG.fixedTimestep = false;
 
+		#if mobile
+		FlxG.scaleMode = scaleMode = new FullScreenScaleMode();
+		#else
 		FlxG.scaleMode = scaleMode = new FunkinRatioScaleMode();
+		#end
 
 		Conductor.init();
 		AudioSwitchFix.init();
