@@ -25,6 +25,10 @@ import sys.io.File;
 #end
 import funkin.backend.assets.ModsFolder;
 
+#if android
+import mobile.backend.StorageSystem;
+#end
+
 class Main extends Sprite
 {
 	// make this empty once you guys are done with the project.
@@ -114,6 +118,10 @@ class Main extends Sprite
 	}
 
 	public static function loadGameSettings() {
+		#if android
+		StorageSystem.init();
+		#end
+
 		WindowUtils.init();
 		SaveWarning.init();
 		MemoryUtil.init();
@@ -212,11 +220,7 @@ class Main extends Sprite
 	}
 
 	private static function onStateSwitchPost() {
-		// manual asset clearing since base openfl one doesnt clear lime one
-		// doesnt clear bitmaps since flixel fork does it auto
-
 		@:privateAccess {
-			// clear uint8 pools
 			for(length=>pool in openfl.display3D.utils.UInt8Buff._pools) {
 				for(b in pool.clear())
 					b.destroy();
